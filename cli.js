@@ -1,3 +1,5 @@
+#!/usr/bin/node
+
 var fs = require('fs');
 var browserifyLite = require('./');
 

@@ -6,6 +6,9 @@
   "scripts": {
     "test": "node test.js"
   },
+  "bin": {
+    "browserify-lite": "./cli.js"
+  },
   "author": "Andrew Kelley <superjoe30@gmail.com>",
   "license": "MIT"
 }
