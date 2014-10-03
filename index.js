@@ -14,6 +14,9 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
   // array of canonical source path dependencies
   var deps = {};
 
+  // each file has its own map of how require statements resolve.
+  var depMap = {};
+
   var sourceQueue = [];
 
   requireResolve(entrySourcePath, process.cwd(), function(err, resolvedPath) {
@@ -21,7 +24,7 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
     sourceQueue.push(resolvedPath);
     collectDependencies(function(err) {
       if (err) return cb(err);
-      render(function(err, output) {
+      render(resolvedPath, function(err, output) {
         if (err) return cb(err);
         fs.writeFile(outBundlePath, output, cb);
       });
@@ -37,6 +40,7 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
       if (err) return cb(err);
       sources[canonicalSourcePath] = source;
       deps[canonicalSourcePath] = {};
+      depMap[canonicalSourcePath] = {};
 
       var pend = new Pend();
       extractRequires(source, function(err, requireList) {
@@ -46,20 +50,59 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
             requireResolve(requireItem, path.dirname(canonicalSourcePath), function(err, canonicalDepPath) {
               if (err) return cb(err);
               deps[canonicalSourcePath][canonicalDepPath] = true;
+              depMap[canonicalSourcePath][requireItem] = canonicalDepPath;
               sourceQueue.push(canonicalDepPath);
               cb();
             });
           });
         });
-        pend.wait(cb);
+        pend.wait(function(err) {
+          if (err) return cb(err);
+          collectDependencies(cb);
+        });
       });
 
     });
   }
 
-  function render(cb) {
-    console.log("deps", deps);
-    // TODO
+  function render(entrySourcePath, cb) {
+    var modules = Object.keys(sources);
+    var aliases = {};
+    modules.forEach(function(canonicalSourcePath, index) {
+      aliases[canonicalSourcePath] = index;
+    });
+    modules.forEach(function(canonicalSourcePath, index) {
+      var thisDepMap = depMap[canonicalSourcePath]
+      for (var depSourcePath in thisDepMap) {
+        thisDepMap[depSourcePath] = aliases[thisDepMap[depSourcePath]];
+      }
+    });
+
+    var out =
+      "(function(modules, cache, entry) {\n" +
+      "  req(entry);\n" +
+      "  function req(name) {\n" +
+      "    if (cache[name]) return cache[name].exports;\n" +
+      "    var m = cache[name] = {exports: {}};\n" +
+      "    modules[name][0].call(m.exports, modRequire, m, m.exports);\n" +
+      "    return m.exports;\n" +
+      "    function modRequire(alias) {\n" +
+      "      var id = modules[name][1][alias];\n" +
+      "      if (!id) throw new Error(\"Cannot find module \" + alias);\n" +
+      "      return req(id);\n" +
+      "    }\n" +
+      "  }\n" +
+      "})({";
+
+    modules.forEach(function(canonicalSourcePath) {
+      out += aliases[canonicalSourcePath] + ": [function(require,module,exports){\n";
+      out += sources[canonicalSourcePath];
+      out += "\n}, " + JSON.stringify(depMap[canonicalSourcePath]) + "],";
+    });
+
+    out += "}, {}, " + aliases[entrySourcePath] + ");\n";
+
+    cb(null, out);
   }
 }
 
