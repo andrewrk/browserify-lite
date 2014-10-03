@@ -288,7 +288,7 @@ function resolveDirectory(dirname, cb) {
     try {
       packageJson = JSON.parse(packageJsonStr);
     } catch (err) {
-      cb(err);
+      cb(new Error("Invalid package.json: " + packageJsonPath + ": "+ err.message));
       return;
     }
     var filename;
