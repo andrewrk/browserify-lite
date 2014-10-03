@@ -293,9 +293,13 @@ function resolveDirectory(dirname, cb) {
         return;
       }
       var filename;
-      if (packageJson.main) {
+      var browserObject = packageJson.browserify || packageJson.browser;
+      if (typeof browserObject === 'string') {
+        filename = path.resolve(dirname, browserObject);
+        requireResolvePath(filename, tryIndex);
+      } else if (packageJson.main) {
         filename = path.resolve(dirname, packageJson.main);
-        resolveFile(filename, tryIndex);
+        requireResolvePath(filename, tryIndex);
       } else {
         tryIndex(new Error("no main found in package.json"));
       }
@@ -304,7 +308,7 @@ function resolveDirectory(dirname, cb) {
     }
 
 
-    function tryIndex(err) {
+    function tryIndex(err, filename) {
       if (!err) return cb(null, filename);
       filename = path.resolve(dirname, "index.js");
       resolveFile(filename, function(err) {
