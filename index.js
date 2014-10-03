@@ -284,6 +284,7 @@ function resolveFile(filename, cb) {
 function resolveDirectory(dirname, cb) {
   var packageJsonPath = path.resolve(dirname, "package.json");
   fs.readFile(packageJsonPath, {encoding: 'utf8'}, function(err, packageJsonStr) {
+    if (err) return cb(err);
     var packageJson;
     try {
       packageJson = JSON.parse(packageJsonStr);
