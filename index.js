@@ -1,4 +1,6 @@
 var fs = require('fs');
+var path = require('path');
+var Pend = require('pend');
 
 exports.extractRequires = extractRequires;
 exports.createBundle = createBundle;
@@ -12,13 +14,17 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
   // array of canonical source path dependencies
   var deps = {};
 
-  var sourceQueue = [require.resolve(entrySourcePath)];
+  var sourceQueue = [];
 
-  collectDependencies(function(err) {
+  requireResolve(entrySourcePath, process.cwd(), function(err, resolvedPath) {
     if (err) return cb(err);
-    render(function(err, output) {
+    sourceQueue.push(resolvedPath);
+    collectDependencies(function(err) {
       if (err) return cb(err);
-      fs.writeFile(outBundlePath, output, cb);
+      render(function(err, output) {
+        if (err) return cb(err);
+        fs.writeFile(outBundlePath, output, cb);
+      });
     });
   });
 
@@ -32,19 +38,28 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
       sources[canonicalSourcePath] = source;
       deps[canonicalSourcePath] = {};
 
+      var pend = new Pend();
       extractRequires(source, function(err, requireList) {
         if (err) return cb(err);
         requireList.forEach(function(requireItem) {
-          var canonicalDepPath = require.resolve(requireItem);
-          deps[canonicalSourcePath][canonicalDepPath] = true;
+          pend.go(function(cb) {
+            requireResolve(requireItem, path.dirname(canonicalSourcePath), function(err, canonicalDepPath) {
+              if (err) return cb(err);
+              deps[canonicalSourcePath][canonicalDepPath] = true;
+              sourceQueue.push(canonicalDepPath);
+              cb();
+            });
+          });
         });
+        pend.wait(cb);
       });
 
     });
   }
 
   function render(cb) {
-
+    console.log("deps", deps);
+    // TODO
   }
 }
 
@@ -164,4 +179,91 @@ function extractRequires(source, cb) {
     }
   }
   cb(null, requiresList);
+}
+
+function requireResolve(pkg, basedir, cb) {
+  if (/^[.\/]/.test(pkg)) {
+    requireResolvePath(path.resolve(basedir, pkg), cb);
+  } else {
+    requireResolveModule(pkg, basedir, cb);
+  }
+}
+
+function requireResolveModule(pkg, basedir, cb) {
+  var globalSearchPaths = process.env.NODE_PATH ? process.env.NODE_PATH.split(path.delimiter) : [];
+
+  var localSearchPaths = [];
+  var parts = basedir.split(path.sep);
+  var it = "/";
+  for (var i = 0; i < parts.length; i += 1) {
+    it = path.join(it, parts[i]);
+    localSearchPaths.unshift(path.join(it, "node_modules"));
+  }
+
+  var searchPaths = localSearchPaths.concat(globalSearchPaths);
+  var index = 0;
+
+  trySearchPath();
+
+  function trySearchPath() {
+    var searchPath = searchPaths[index];
+    if (!searchPath) return cb(new Error("module not found"));
+
+    requireResolvePath(path.resolve(searchPath, pkg), function(err, resolvedFilename) {
+      if (!err) return cb(null, resolvedFilename);
+      index += 1;
+      trySearchPath();
+    });
+  }
+}
+
+function requireResolvePath(filename, cb) {
+  resolveFile(filename, function(err, resolvedFilename) {
+    if (!err) return cb(null, resolvedFilename);
+    resolveFile(filename + '.js', function(err, resolvedFilename) {
+      if (!err) return cb(null, resolvedFilename);
+      resolveFile(filename + '.json', function(err, resolvedFilename) {
+        if (!err) return cb(null, resolvedFilename);
+        resolveDirectory(filename, cb);
+      });
+    });
+  });
+}
+
+function resolveFile(filename, cb) {
+  fs.stat(filename, function(err, stat) {
+    if (err) return cb(err);
+    if (stat.isDirectory()) return cb(new Error("directory"));
+    cb(null, filename);
+  });
+}
+
+function resolveDirectory(dirname, cb) {
+  var packageJsonPath = path.resolve(dirname, "package.json");
+  fs.readFile(packageJsonPath, {encoding: 'utf8'}, function(err, packageJsonStr) {
+    var packageJson;
+    try {
+      packageJson = JSON.parse(packageJsonStr);
+    } catch (err) {
+      cb(err);
+      return;
+    }
+    var filename;
+    if (packageJson.main) {
+      filename = path.resolve(dirname, packageJson.main);
+      resolveFile(filename, tryIndex);
+    } else {
+      tryIndex(new Error("no main found in package.json"));
+    }
+
+    function tryIndex(err) {
+      if (!err) return cb(null, filename);
+      filename = path.resolve(dirname, "index.js");
+      resolveFile(filename, function(err) {
+        if (!err) return cb(null, filename);
+        filename = path.resolve(dirname, "index.json");
+        resolveFile(filename, cb);
+      });
+    }
+  });
 }

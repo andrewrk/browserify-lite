@@ -10,5 +10,8 @@
     "browserify-lite": "./cli.js"
   },
   "author": "Andrew Kelley <superjoe30@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "pend": "~1.1.3"
+  }
 }
