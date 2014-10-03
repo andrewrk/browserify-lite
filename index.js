@@ -250,7 +250,7 @@ function requireResolveModule(pkg, basedir, cb) {
 
   function trySearchPath() {
     var searchPath = searchPaths[index];
-    if (!searchPath) return cb(new Error("module not found"));
+    if (!searchPath) return cb(new Error("module " + pkg + " in " + basedir + " not found"));
 
     requireResolvePath(path.resolve(searchPath, pkg), function(err, resolvedFilename) {
       if (!err) return cb(null, resolvedFilename);
@@ -284,21 +284,25 @@ function resolveFile(filename, cb) {
 function resolveDirectory(dirname, cb) {
   var packageJsonPath = path.resolve(dirname, "package.json");
   fs.readFile(packageJsonPath, {encoding: 'utf8'}, function(err, packageJsonStr) {
-    if (err) return cb(err);
-    var packageJson;
-    try {
-      packageJson = JSON.parse(packageJsonStr);
-    } catch (err) {
-      cb(new Error("Invalid package.json: " + packageJsonPath + ": "+ err.message));
-      return;
-    }
-    var filename;
-    if (packageJson.main) {
-      filename = path.resolve(dirname, packageJson.main);
-      resolveFile(filename, tryIndex);
+    if (!err) {
+      var packageJson;
+      try {
+        packageJson = JSON.parse(packageJsonStr);
+      } catch (err) {
+        cb(new Error("Invalid package.json: " + packageJsonPath + ": "+ err.message));
+        return;
+      }
+      var filename;
+      if (packageJson.main) {
+        filename = path.resolve(dirname, packageJson.main);
+        resolveFile(filename, tryIndex);
+      } else {
+        tryIndex(new Error("no main found in package.json"));
+      }
     } else {
-      tryIndex(new Error("no main found in package.json"));
+      tryIndex(new Error("no package.json found"));
     }
+
 
     function tryIndex(err) {
       if (!err) return cb(null, filename);
