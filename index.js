@@ -96,6 +96,9 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
 
     modules.forEach(function(canonicalSourcePath) {
       out += aliases[canonicalSourcePath] + ": [function(require,module,exports){\n";
+      if (canonicalSourcePath.match(/\.json$/)) {
+        out += "module.exports = ";
+      }
       out += sources[canonicalSourcePath];
       out += "\n}, " + JSON.stringify(depMap[canonicalSourcePath]) + "],";
     });
