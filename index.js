@@ -113,6 +113,7 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
 function tokenizeSource(source) {
   var tokens = [];
   var inQuote = false;
+  var bracesHack = true;
   var braceCount = 0;
   var quoteType;
   var qEscape = false;
@@ -131,7 +132,7 @@ function tokenizeSource(source) {
         qEscape = true;
       } else if (c === quoteType) {
         inQuote = false;
-        if (braceCount === 0) {
+        if (braceCount === 0 || bracesHack) {
           tokens.push(token);
         }
         token = "";
@@ -182,7 +183,7 @@ function tokenizeSource(source) {
       token = "";
       inMultiLineComment = true;
       startComment = false;
-    } else if (braceCount === 0) {
+    } else if (braceCount === 0 || bracesHack) {
       if (/\W/.test(c)) {
         if (token) tokens.push(token);
         token = "";
