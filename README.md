@@ -4,8 +4,8 @@ browserify, minus some of the advanced features and heavy dependencies.
 
  * No builtin Node.js shims.
  * Naive AST tokenization for require instead of true AST parsing.
-   - Require statements must be outside all braces. This includes functions,
-     control statements, and objects.
+   - All require statements are found regardless of if they are in an `if`
+     statement or a function body that is never called.
  * Only supports a single entry file and the `--outfile` parameter,
    nothing else.
  * No source maps.

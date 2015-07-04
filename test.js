@@ -52,20 +52,22 @@ var extractRequiresTests = [
   },
   {
     name: "ignore braces",
-    source: "var foo = require('derp'); { require('ignore-this'); } require('this-ok')\n",
+    source: "var foo = require('derp'); { require('dont-ignore-this'); } require('this-ok')\n",
     output: [
       "derp",
+      "dont-ignore-this",
       "this-ok",
     ],
   },
   {
     name: "ignore comments",
-    source: "/* var foo = require('derp');*/ { require('ignore-this'); } require('this-ok') // require('also-ignore-this'); \n require('this-also-ok')",
+    source: "/* var foo = require('derp');*/ { require('dont-ignore-this'); } require('this-ok') // require('also-ignore-this'); \n require('this-also-ok')",
     output: [
+      "dont-ignore-this",
       "this-ok",
       "this-also-ok",
     ],
-  },
+  }
 ];
 
 process.stderr.write("extract requires tests:\n");

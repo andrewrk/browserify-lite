@@ -113,7 +113,6 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
 function tokenizeSource(source) {
   var tokens = [];
   var inQuote = false;
-  var braceCount = 0;
   var quoteType;
   var qEscape = false;
   var token = "";
@@ -131,9 +130,7 @@ function tokenizeSource(source) {
         qEscape = true;
       } else if (c === quoteType) {
         inQuote = false;
-        if (braceCount === 0) {
-          tokens.push(token);
-        }
+        tokens.push(token);
         token = "";
       } else {
         token += c;
@@ -164,10 +161,8 @@ function tokenizeSource(source) {
       startComment = false;
       if (token) tokens.push(token);
       token = "";
-      braceCount += 1;
     } else if (c === '}') {
       startComment = false;
-      braceCount -= 1;
     } else if (c === '/') {
       if (startComment) {
         if (token) tokens.push(token);
@@ -182,7 +177,7 @@ function tokenizeSource(source) {
       token = "";
       inMultiLineComment = true;
       startComment = false;
-    } else if (braceCount === 0) {
+    } else {
       if (/\W/.test(c)) {
         if (token) tokens.push(token);
         token = "";
@@ -190,8 +185,6 @@ function tokenizeSource(source) {
       if (/\S/.test(c)) {
         token += c;
       }
-    } else {
-      startComment = false;
     }
   }
   if (token) tokens.push(token);
