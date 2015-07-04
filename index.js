@@ -84,7 +84,7 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
       "  function req(name) {\n" +
       "    if (cache[name]) return cache[name].exports;\n" +
       "    var m = cache[name] = {exports: {}};\n" +
-      "    modules[name][0].call(m.exports, modRequire, m, m.exports);\n" +
+      "    modules[name][0].call(m.exports, modRequire, m, m.exports, window);\n" +
       "    return m.exports;\n" +
       "    function modRequire(alias) {\n" +
       "      var id = modules[name][1][alias];\n" +
@@ -95,7 +95,7 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
       "})({";
 
     modules.forEach(function(canonicalSourcePath) {
-      out += aliases[canonicalSourcePath] + ": [function(require,module,exports){\n";
+      out += aliases[canonicalSourcePath] + ": [function(require,module,exports,global){\n";
       if (canonicalSourcePath.match(/\.json$/)) {
         out += "module.exports = ";
       }
