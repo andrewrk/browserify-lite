@@ -3,25 +3,29 @@
 var fs = require('fs');
 var browserifyLite = require('./');
 
-var entrySourcePath = process.argv[2];
-var outputFileParam = process.argv[3];
-var outBundlePath = process.argv[4];
+var options = {};
+for (var i = 2; i < process.argv.length; i += 1) {
+  var arg = process.argv[i];
+  if (arg === '--help') {
+    usage();
+  } else if (arg === '--outfile') {
+    if (++i >= process.argv.length) usage();
+    options.outBundlePath = process.argv[i];
+  } else if (arg === '--standalone') {
+    if (++i >= process.argv.length) usage();
+    options.standalone = process.argv[i];
+  } else if (!options.entrySourcePath) {
+    options.entrySourcePath = arg;
+  } else {
+    usage();
+  }
+}
 
-if (entrySourcePath === '--help') {
+if (!options.outBundlePath || !options.entrySourcePath) {
   usage();
 }
 
-if (outputFileParam !== '--outfile') {
-  console.error("Expected second param to be --outfile\n");
-  usage();
-}
-
-if (!outBundlePath || !entrySourcePath) {
-  console.error("Expected first arg to be source path and third arg to be out bundle path.\n");
-  usage();
-}
-
-browserifyLite.createBundle(entrySourcePath, outBundlePath, function(err) {
+browserifyLite.createBundle(options, function(err) {
   if (err) throw err;
 });
 
@@ -32,6 +36,7 @@ function usage() {
       "\n" +
       "Standard Options:\n" +
       "\n" +
-      "        --outfile  Write the browserify bundle to this file.");
+      "        --outfile         Write the browserify bundle to this file\n" +
+      "        --standalone xyz  Export as window.xyz");
   process.exit(1);
 }

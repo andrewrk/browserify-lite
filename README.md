@@ -14,7 +14,12 @@ browserify, minus some of the advanced features and heavy dependencies.
 ## Usage
 
 ```
-browserify-lite ./src/app.js --outfile public/app.js
+browserify-lite ./entry-file.js --outfile bundle.js
+
+Standard Options:
+
+        --outfile         Write the browserify bundle to this file.
+        --standalone xyz  Export as a window global.
 ```
 
 ./src/app.js can depend on any modules using Node.js's

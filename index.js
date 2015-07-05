@@ -5,7 +5,11 @@ var Pend = require('pend');
 exports.extractRequires = extractRequires;
 exports.createBundle = createBundle;
 
-function createBundle(entrySourcePath, outBundlePath, cb) {
+function createBundle(options, cb) {
+  var entrySourcePath = options.entrySourcePath;
+  var outBundlePath = options.outBundlePath;
+  var standalone = options.standalone;
+
   // data structure that is filled up with canonical source path as the key,
   // source code as the value.
   var sources = {};
@@ -78,9 +82,13 @@ function createBundle(entrySourcePath, outBundlePath, cb) {
       }
     });
 
+    var standaloneLine = standalone ?
+      "  window." + standalone + " = req(entry);\n" :
+      "  req(entry);\n";
+
     var out =
       "(function(modules, cache, entry) {\n" +
-      "  req(entry);\n" +
+      standaloneLine +
       "  function req(name) {\n" +
       "    if (cache[name]) return cache[name].exports;\n" +
       "    var m = cache[name] = {exports: {}};\n" +
