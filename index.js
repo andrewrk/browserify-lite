@@ -30,7 +30,11 @@ function createBundle(options, cb) {
       if (err) return cb(err);
       render(resolvedPath, function(err, output) {
         if (err) return cb(err);
-        fs.writeFile(outBundlePath, output, cb);
+        if (outBundlePath) {
+          fs.writeFile(outBundlePath, output, cb);
+        } else {
+          cb(null, output);
+        }
       });
     });
   });
