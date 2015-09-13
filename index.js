@@ -4,10 +4,18 @@ var Pend = require('pend');
 
 exports.extractRequires = extractRequires;
 exports.createBundle = createBundle;
+exports.renderBundle = renderBundle;
 
 function createBundle(options, cb) {
-  var entrySourcePath = options.entrySourcePath;
   var outBundlePath = options.outBundlePath;
+  renderBundle(options, function(err, output) {
+    if (err) return cb(err);
+    fs.writeFile(outBundlePath, output, cb);
+  });
+}
+
+function renderBundle(options, cb) {
+  var entrySourcePath = options.entrySourcePath;
   var standalone = options.standalone;
 
   // data structure that is filled up with canonical source path as the key,
@@ -30,7 +38,7 @@ function createBundle(options, cb) {
       if (err) return cb(err);
       render(resolvedPath, function(err, output) {
         if (err) return cb(err);
-        fs.writeFile(outBundlePath, output, cb);
+        cb(null, output);
       });
     });
   });
@@ -116,7 +124,6 @@ function createBundle(options, cb) {
     cb(null, out);
   }
 }
-
 
 function tokenizeSource(source) {
   var tokens = [];
