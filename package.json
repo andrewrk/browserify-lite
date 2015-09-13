@@ -1,6 +1,6 @@
 {
   "name": "browserify-lite",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "browserify, minus some of the advanced features and heavy dependencies.",
   "main": "index.js",
   "scripts": {
