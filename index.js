@@ -230,6 +230,8 @@ function extractRequires(source, cb) {
     } else if (state === STATE_WANT_RPAREN && token === ')') {
       state = STATE_WANT_REQUIRE;
       requiresList.push(requireName);
+    } else if (state === STATE_WANT_RPAREN && token !== ')') {
+      state = STATE_WANT_REQUIRE;
     }
   }
   cb(null, requiresList);
