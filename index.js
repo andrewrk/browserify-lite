@@ -79,6 +79,8 @@ function renderBundle(options, cb) {
 
   function render(entrySourcePath, cb) {
     var modules = Object.keys(sources);
+    // for reproducibility
+    modules.sort();
     var aliases = {};
     modules.forEach(function(canonicalSourcePath, index) {
       aliases[canonicalSourcePath] = index;
@@ -116,7 +118,17 @@ function renderBundle(options, cb) {
         out += "module.exports = ";
       }
       out += sources[canonicalSourcePath];
-      out += "\n}, " + JSON.stringify(depMap[canonicalSourcePath]) + "],";
+      out += "\n}, {";
+      // for reproducibility, as JSON.stringify(depMap[canonicalSourcePath]) does not guarantee order - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
+      var depMapKeys = Object.keys(depMap[canonicalSourcePath]);
+      depMapKeys.sort();
+      depMapKeys.forEach(function(depPath, index) {
+          if (index != 0) {
+              out += ",\n"; // separate to not have a trailing comma
+          }
+          out += "\"" + depPath + "\": " + depMap[canonicalSourcePath][depPath];
+      });
+      out += "\n}],";
     });
 
     out += "}, {}, " + aliases[entrySourcePath] + ");\n";
