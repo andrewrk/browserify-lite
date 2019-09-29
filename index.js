@@ -126,7 +126,7 @@ function renderBundle(options, cb) {
           if (index != 0) {
               out += ",\n"; // separate to not have a trailing comma
           }
-          out += "\"" + depPath + "\": " + depMap[canonicalSourcePath][depPath];
+          out += JSON.stringify(depPath) + ": " + depMap[canonicalSourcePath][depPath];
       });
       out += "\n}],";
     });
