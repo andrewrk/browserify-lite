@@ -124,11 +124,11 @@ function renderBundle(options, cb) {
       depMapKeys.sort();
       depMapKeys.forEach(function(depPath, index) {
           if (index != 0) {
-              out += ",\n"; // separate to not have a trailing comma
+              out += ","; // separate to not have a trailing comma
           }
-          out += JSON.stringify(depPath) + ": " + depMap[canonicalSourcePath][depPath];
+          out += JSON.stringify(depPath) + ":" + depMap[canonicalSourcePath][depPath];
       });
-      out += "\n}],";
+      out += "}],";
     });
 
     out += "}, {}, " + aliases[entrySourcePath] + ");\n";
