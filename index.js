@@ -111,12 +111,13 @@ function renderBundle(options, cb) {
       "})({";
 
     modules.forEach(function(canonicalSourcePath) {
+      var thisDepMap = depMap[canonicalSourcePath];
       out += aliases[canonicalSourcePath] + ": [function(require,module,exports,global){\n";
       if (canonicalSourcePath.match(/\.json$/)) {
         out += "module.exports = ";
       }
       out += sources[canonicalSourcePath];
-      out += "\n}, " + JSON.stringify(depMap[canonicalSourcePath]) + "],";
+      out += "\n}, " + JSON.stringify(thisDepMap, Object.keys(thisDepMap).sort()) + "],";
     });
 
     out += "}, {}, " + aliases[entrySourcePath] + ");\n";
